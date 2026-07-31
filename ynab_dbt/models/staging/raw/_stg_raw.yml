@@ -1,0 +1,101 @@
+models:
+  - name: stg_ynab_accounts
+    description: Staged accounts from YNAB raw payload
+    columns:
+      - name: account_id
+        description: Unique identifier for the account
+        tests:
+          - unique
+          - not_null
+      - name: account_name
+        description: Display name of the account
+      - name: account_type
+        description: Type of account (e.g. checking, savings)
+      - name: account_note
+        description: Optional note on the account
+      - name: is_on_budget
+        description: Whether the account is on budget
+      - name: is_closed
+        description: Whether the account is closed
+      - name: is_deleted
+        description: Whether the account is deleted
+      - name: cleared_balance
+        description: Cleared balance in dollars
+      - name: uncleared_balance
+        description: Uncleared balance in dollars
+      - name: total_balance
+        description: Total balance in dollars
+      - name: transfer_payee_id
+        description: Payee ID used for transfers to/from this account
+      - name: is_direct_import_linked
+        description: Whether the account is linked for direct import
+      - name: is_direct_import_in_error
+        description: Whether the direct import link is in an error state
+
+  - name: stg_ynab_categories
+    description: Staged categories from YNAB raw payload
+    columns:
+      - name: category_id
+        description: Unique identifier for the category
+        tests:
+          - unique
+          - not_null
+      - name: category_group_id
+        description: Foreign key to the parent category group
+        tests:
+          - not_null
+      - name: category_name
+        description: Display name of the category
+      - name: category_group_name
+        description: Display name of the parent category group
+      - name: goal_type
+        description: Type of savings goal assigned to the category
+      - name: category_note
+        description: Optional note on the category
+      - name: is_hidden
+        description: Whether the category is hidden
+      - name: is_deleted
+        description: Whether the category is deleted
+      - name: is_category_group_hidden
+        description: Whether the parent category group is hidden
+      - name: is_category_group_deleted
+        description: Whether the parent category group is deleted
+      - name: budgeted_amount
+        description: Amount budgeted this month in dollars
+      - name: activity_amount
+        description: Spending activity this month in dollars
+      - name: balance_amount
+        description: Remaining balance in dollars
+      - name: goal_target_amount
+        description: Goal target amount in dollars
+      - name: goal_creation_month
+        description: Month the goal was created
+      - name: goal_target_month
+        description: Month the goal is targeted to be completed
+      - name: goal_percentage_complete
+        description: Percentage of the goal completed
+
+  - name: stg_ynab_transactions
+    description: Staged transactions from YNAB raw payload
+    columns:
+      - name: transaction_id
+        description: Unique identifier for the transaction
+        tests:
+          - unique
+          - not_null
+      - name: transaction_date
+        description: Date the transaction occurred
+        tests:
+          - not_null
+      - name: amount
+        description: Transaction amount in dollars (negative = outflow)
+      - name: payee_name
+        description: Name of the payee
+      - name: category_id
+        description: Foreign key to the category
+      - name: account_id
+        description: Foreign key to the account
+        tests:
+          - not_null
+      - name: cleared_status
+        description: Cleared status of the transaction (cleared, uncleared, reconciled)

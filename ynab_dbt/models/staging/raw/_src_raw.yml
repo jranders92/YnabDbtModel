@@ -1,0 +1,28 @@
+sources:
+  - name: raw
+    description: Raw transactions from YNAB
+    database: personal_finance
+    schema: raw
+    tables:
+      - name: raw_ynab_payloads
+        config:
+          freshness:
+            warn_after:
+              count: 24
+              period: hour
+            error_after: 
+              count: 48
+              period: hour
+        columns:
+          - name: endpoint_name
+            description:
+            tests:
+              - accepted_values:
+                  arguments:
+                    values: ["accounts", "categories", "transactions"]
+          
+          - name: extracted_at
+            description: time extracted and loaded from api call  
+
+          - name: payload
+            description: Raw JSON payload from YNAB API
