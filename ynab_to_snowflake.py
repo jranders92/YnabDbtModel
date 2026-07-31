@@ -3,6 +3,9 @@ import os
 import sys
 import requests
 import snowflake.connector
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ==========================================
 # 1. CONFIGURATION
