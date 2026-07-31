@@ -15,7 +15,7 @@ sources:
               period: hour
         columns:
           - name: endpoint_name
-            description:
+            description: Name of the YNAB API endpoint
             tests:
               - accepted_values:
                   arguments:
