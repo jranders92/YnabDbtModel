@@ -1,0 +1,40 @@
+models:
+  - name: stg_fred_observations
+    columns:
+      - name: observation_pk
+        description: Unique identifier for the observation
+        tests:
+          - unique
+          - not_null
+      - name: series_id
+        description: Identifier for the FRED series
+      - name: observation_date
+        description: Date of the observation
+      - name: observation_value
+        description: Value of the observation
+      - name: realtime_start_date
+        description: Realtime start date of the observation
+      - name: realtime_end_date
+        description: Realtime end date of the observation
+
+  - name: stg_fred_series_metadata
+    columns:
+      - name: series_id
+        description: Identifier for the FRED series
+        tests:
+          - unique
+          - not_null
+      - name: series_title
+        description: Title of the FRED series
+      - name: frequency
+        description: Frequency of the FRED series
+      - name: frequency_short
+        description: Short description of frequency
+      - name: units
+        description: Units of the FRED series
+      - name: units_short
+        description: Short description of units
+      - name: seasonal_adjustment
+        description: Seasonal adjustment of the FRED series
+      - name: last_updated_at
+        description: Date the FRED series was last updated
