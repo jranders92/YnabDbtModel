@@ -17,7 +17,9 @@ select
     case when amount < 0 then abs(amount) else 0 end as outflow_amount,
 
     -- Flags
-    cleared_status
+    cleared_status,
+    approved_status,
+    is_deleted
 
 from transactions
 -- Exclude internal account transfers for pure cash-flow reporting

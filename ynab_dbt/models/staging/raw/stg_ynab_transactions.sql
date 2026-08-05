@@ -13,6 +13,8 @@ select
     value:payee_name::string as payee_name,
     value:category_id::string as category_id,
     value:account_id::string as account_id,
-    value:cleared::string as cleared_status
+    value:cleared::string as cleared_status,
+    value:approved::string as approved_status,
+    value:deleted::boolean as is_deleted
 from raw_data,
 lateral flatten(input => payload:data:transactions)

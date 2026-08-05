@@ -11,6 +11,11 @@ models:
         description: Display name of the account
       - name: account_type
         description: Type of account (e.g. checking, savings)
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['checking', 'savings', 'cash', 'creditCard', 'lineOfCredit', 'investment', 'mortgage', 'autoLoan',
+                  'studentLoan', 'personalLoan', 'medicalDebt', 'otherAsset', 'otherLiability']
       - name: account_note
         description: Optional note on the account
       - name: is_on_budget
@@ -50,6 +55,10 @@ models:
         description: Display name of the parent category group
       - name: goal_type
         description: Type of savings goal assigned to the category
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['TB', 'MF', 'TBD', 'NEED', 'DEBT', 'NULL']
       - name: category_note
         description: Optional note on the category
       - name: is_hidden
