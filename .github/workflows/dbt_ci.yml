@@ -20,6 +20,10 @@ jobs:
     name: Run Slim CI and Tests
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./dbt_ynab
+
     steps:
       # Step 1: Fetch the repository source code
       - name: Check out repository
