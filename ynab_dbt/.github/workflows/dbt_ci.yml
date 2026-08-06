@@ -22,7 +22,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./dbt_ynab
+        working-directory: ./ynab_dbt
 
     steps:
       # Step 1: Fetch the repository source code
