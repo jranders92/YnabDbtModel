@@ -43,23 +43,23 @@ jobs:
           pip install dbt-snowflake
 
       - name: Create default profiles.yml on GitHub Runner
-              run: |
-                mkdir -p ~/.dbt
-                cat <<EOF > ~/.dbt/profiles.yml
-                ynab_dbt:
-                  target: ci
-                  outputs:
-                    ci:
-                      type: snowflake
-                      account: "${DBT_SNOWFLAKE_ACCOUNT}"
-                      user: "${DBT_SNOWFLAKE_USER}"
-                      password: "${DBT_SNOWFLAKE_PASSWORD}"
-                      role: ACCOUNTADMIN
-                      database: PERSONAL_FINANCE
-                      warehouse: COMPUTE_WH
-                      schema: "${DBT_CI_SCHEMA}"
-                      threads: 16
-                EOF
+        run: |
+          mkdir -p ~/.dbt
+          cat <<EOF > ~/.dbt/profiles.yml
+          ynab_dbt:
+            target: ci
+            outputs:
+              ci:
+                type: snowflake
+                account: "${DBT_SNOWFLAKE_ACCOUNT}"
+                user: "${DBT_SNOWFLAKE_USER}"
+                password: "${DBT_SNOWFLAKE_PASSWORD}"
+                role: ACCOUNTADMIN
+                database: PERSONAL_FINANCE
+                warehouse: COMPUTE_WH
+                schema: "${DBT_CI_SCHEMA}"
+                threads: 16
+          EOF
 
       # Step 4: Install dbt hub packages (dbt_utils, etc.)
       - name: Install dbt packages
