@@ -32,12 +32,12 @@ HEADERS = {
 # ==========================================
 # 2. YNAB API FETCH FUNCTIONS
 # ==========================================
-def fetch_ynab_endpoint(endpoint: str) -> dict:
+def fetch_ynab_endpoint(endpoint: str, params: dict = None) -> dict:
     """Fetch raw JSON payload from a specific YNAB endpoint."""
     url = f"{YNAB_BASE_URL}/budgets/{YNAB_BUDGET_ID}/{endpoint}"
     print(f"Fetching YNAB data from: {url}")
 
-    response = requests.get(url, headers=HEADERS)
+    response = requests.get(url, headers=HEADERS, params=params)
     if response.status_code != 200:
         print(f"Error fetching {endpoint}: {response.status_code} - {response.text}")
         sys.exit(1)
@@ -93,7 +93,8 @@ def main():
     extracted_data = {}
 
     for endpoint in endpoints_to_extract:
-        extracted_data[endpoint] = fetch_ynab_endpoint(endpoint)
+        transaction_params = {"since_date": "2023-01-01"}
+        extracted_data[endpoint] = fetch_ynab_endpoint(endpoint, transaction_params if endpoint == "transactions" else None)
 
     # Step 2: Connect to Snowflake & Load
     print("\nConnecting to Snowflake...")
