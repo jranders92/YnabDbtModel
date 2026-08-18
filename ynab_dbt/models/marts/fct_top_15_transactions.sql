@@ -4,4 +4,4 @@ with transactions as (
 
 Select * from transactions
 order by transaction_amount desc
-limit 10
+limit 15
