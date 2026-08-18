@@ -1,0 +1,68 @@
+name: dbt Production
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DBT_SNOWFLAKE_ACCOUNT: ${{ secrets.DBT_SNOWFLAKE_ACCOUNT }}
+  DBT_SNOWFLAKE_USER: ${{ secrets.DBT_SNOWFLAKE_USER }}
+  DBT_SNOWFLAKE_PASSWORD: ${{ secrets.DBT_SNOWFLAKE_PASSWORD }}
+
+jobs:
+  dbt_prod_build:
+    name: Run Production Build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./ynab_dbt
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dbt
+        run: |
+          pip install --upgrade pip
+          pip install dbt-snowflake
+
+      - name: Create profiles.yml
+        run: |
+          mkdir -p ~/.dbt
+          cat <<EOF > ~/.dbt/profiles.yml
+          ynab_dbt:
+            target: prod
+            outputs:
+              prod:
+                type: snowflake
+                account: "${DBT_SNOWFLAKE_ACCOUNT}"
+                user: "${DBT_SNOWFLAKE_USER}"
+                password: "${DBT_SNOWFLAKE_PASSWORD}"
+                role: ACCOUNTADMIN
+                database: PERSONAL_FINANCE
+                warehouse: COMPUTE_WH
+                schema: analytics_prod
+                threads: 16
+          EOF
+
+      - name: Install dbt packages
+        run: dbt deps
+
+      - name: Run dbt build
+        run: dbt build --target prod
+
+      - name: Upload manifest for Slim CI
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-manifest
+          path: ./ynab_dbt/target/manifest.json
+          retention-days: 7
