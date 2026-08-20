@@ -1,0 +1,8 @@
+# used for testing changes to dim categories logic
+sources:
+  - name: analytics_prod
+    database: PERSONAL_FINANCE
+    schema: analytics_prod
+    tables:
+      - name: fct_monthly_budget_variance
+      - name: fct_monthly_grocery_inflation
