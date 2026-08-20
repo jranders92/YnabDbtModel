@@ -31,5 +31,6 @@ select
     is_deleted
 
 from transactions
--- Exclude internal account transfers for pure cash-flow reporting
--- where not is_transfer
+{% if is_incremental() %} -- upserting past 30 days of transactions to avoid unnecessary compute
+    where transaction_date >= dateadd('day', -30, current_date())
+{% endif %}
