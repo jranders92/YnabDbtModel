@@ -1,5 +1,5 @@
 with monthly_budget as (
-    select * from {{ ref('stg_ynab_categories') }}
+    select * from {{ ref('dim_categories') }}
 ),
 
 monthly_actuals as (
