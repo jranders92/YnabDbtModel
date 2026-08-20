@@ -1,3 +1,12 @@
+{{
+    config(
+        materialized='incremental',
+        unique_key='transaction_id',
+        incremental_strategy='merge',
+        on_schema_change='fail'
+    )
+}}
+
 with transactions as (
     select * from {{ ref('stg_ynab_transactions') }}
 )
@@ -22,5 +31,6 @@ select
     is_deleted
 
 from transactions
--- Exclude internal account transfers for pure cash-flow reporting
--- where not is_transfer
+{% if is_incremental() %} -- upserting past 30 days of transactions to avoid unnecessary compute
+    where transaction_date >= dateadd('day', -30, current_date())
+{% endif %}
