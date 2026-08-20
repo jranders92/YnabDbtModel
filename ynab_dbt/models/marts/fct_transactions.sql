@@ -1,3 +1,12 @@
+{{
+    config(
+        materialized='incremental',
+        unique_key='transaction_id',
+        incremental_strategy='merge',
+        on_schema_change='fail'
+    )
+}}
+
 with transactions as (
     select * from {{ ref('stg_ynab_transactions') }}
 )
