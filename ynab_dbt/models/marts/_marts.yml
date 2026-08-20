@@ -1,10 +1,34 @@
+# used for testing changes to dim categories logic
 models:
-  - name: fct_transactions
+  - name: dim_categories
+    latest_version: 2
+    versions:
+      - v: 1
+      # initial version
+      - v: 2
+       # added budgeted amount column from staging
     description: >
-      This table contains all transactions from YNAB
-    columns:
-      - name: transaction_id
-        description: Primary key of the table
-        tests:
-          - unique
-          - not_null
+      Categories dimension table
+
+  - name: fct_monthly_budget_variance
+    latest_version: 2
+    versions:
+      - v: 1
+      # initial version
+      - v: 2
+       # changed category ref from staging to fct
+    description: >
+      Monthly budget variance facts table
+    tests:
+      - dbt_utils.equality:
+          arguments:
+            compare_model: source('analytics_prod', 'fct_monthly_budget_variance')
+
+  - name: fct_monthly_grocery_inflation
+    description: >
+      Monthly grocery inflation facts table
+    tests:
+      - dbt_utils.equality:
+          arguments:
+            compare_model: source('analytics_prod', 'fct_monthly_grocery_inflation')
+
