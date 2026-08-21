@@ -19,21 +19,14 @@ monthly_actuals as (
 )
 
 select
-    md5(concat(coalesce(b.category_id, ''), '-', cast(b.budget_month as string))) as budget_variance_pk,
+    md5(concat(coalesce(b.category_id, ''), '-', cast(b.budget_month as string))) as budget_variance_sk,
     b.budget_month,
     b.category_id,
     
     -- Measures
     b.budgeted_amount,
     coalesce(a.total_actual_outflow, 0) as actual_spent_amount,
-    b.budgeted_amount - coalesce(a.total_actual_outflow, 0) as variance_amount,
-
-    -- Pacing / Utilization %
-    case 
-        when b.budgeted_amount > 0 
-        then round((coalesce(a.total_actual_outflow, 0) / b.budgeted_amount) * 100, 2)
-        else null 
-    end as budget_utilization_pct
+    b.budgeted_amount - coalesce(a.total_actual_outflow, 0) as variance_amount
 
 from monthly_budget b
 left join monthly_actuals a 
