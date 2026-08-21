@@ -9,3 +9,25 @@ models:
               arguments:
                 min_value: "cast('2023-01-01' as date)"
                 max_value: "cast('2030-01-01' as date)"
+
+  - name: fct_monthly_budget_variance
+    columns:
+      - name: budget_variance_sk
+        tests:
+          - unique
+          - not_null
+      - name: category_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_categories')
+                field: category_id
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - category_id
+              - budget_month
+
+
