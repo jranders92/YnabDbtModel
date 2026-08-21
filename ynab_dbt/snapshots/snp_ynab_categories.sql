@@ -4,7 +4,7 @@
     config(
         unique_key='category_id',
         strategy='check',
-        check_cols=['budgeted_amount', 'activity_amount', 'balance_amount']
+        check_cols=['budgeted_amount', 'activity_amount', 'balance_amount', 'budget_month']
     )
 }}
 
