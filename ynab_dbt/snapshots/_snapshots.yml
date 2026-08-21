@@ -1,0 +1,19 @@
+snapshots:
+  - name: snp_ynab_categories
+    columns:
+      - name: category_id
+        tests:
+        - not_null
+      - name: dbt_scd_id
+        tests:
+        - unique
+        - not_null
+    
+    # ensures one row per category per budget month per change event (SCD Type 2 grain)
+    tests: 
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - category_id
+              - budget_month
+              - dbt_valid_from
