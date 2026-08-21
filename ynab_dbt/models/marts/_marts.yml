@@ -30,4 +30,31 @@ models:
               - category_id
               - budget_month
 
+  - name: fct_monthly_gas_inflation
+    columns:
+      - name: gas_inflation_sk
+        tests:
+          - unique
+          - not_null
+      - name: month_date
+        tests:
+          - not_null
+      - name: fred_series_id
+        tests:
+          - not_null
+      - name: total_gas_spent
+        tests:
+          - not_null
+      - name: transaction_count
+        tests:
+          - not_null
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - month_date
+              - fred_series_id
+
+
+
 
