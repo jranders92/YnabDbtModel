@@ -59,6 +59,9 @@ jobs:
       - name: Run dbt build
         run: dbt build --target prod
 
+      - name: Run dbt snapshot
+        run: dbt snapshot --target prod
+
       - name: Upload manifest for Slim CI
         if: success()
         uses: actions/upload-artifact@v4

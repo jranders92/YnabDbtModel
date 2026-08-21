@@ -1,5 +1,6 @@
 with raw_data as (
-    select payload
+    select payload, 
+    extracted_at -- needed for category snapshot
     from {{ source('raw', 'raw_ynab_payloads') }}
     where endpoint_name = 'categories'
     order by extracted_at desc
@@ -12,7 +13,8 @@ category_groups as (
         group_node.value:name::string as category_group_name,
         group_node.value:hidden::boolean as is_category_group_hidden,
         group_node.value:deleted::boolean as is_category_group_deleted,
-        category_node.value as category_data
+        category_node.value as category_data,
+        extracted_at 
     from raw_data,
     lateral flatten(input => payload:data:category_groups) as group_node,
     lateral flatten(input => group_node.value:categories) as category_node
@@ -44,6 +46,7 @@ select
     -- Goal Attributes
     category_data:goal_creation_month::date as goal_creation_month,
     category_data:goal_target_month::date as goal_target_month,
-    category_data:goal_percentage_complete::int as goal_percentage_complete
+    category_data:goal_percentage_complete::int as goal_percentage_complete,
+    extracted_at
 
 from category_groups
