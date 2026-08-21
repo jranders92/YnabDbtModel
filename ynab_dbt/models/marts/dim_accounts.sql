@@ -10,7 +10,7 @@ select
     -- Asset vs. Liability Grouping
     case
         when account_type in ('checking', 'savings', 'cash', 'otherAsset') then 'Asset'
-        when account_type in ('creditCard', 'lineOfCredit', 'otherLiability', 'mortgage') then 'Liability'
+        when account_type in ('creditCard', 'lineOfCredit', 'otherLiability', 'mortgage', 'autoLoan') then 'Liability'
         else 'Unknown'
     end as accounting_type,
 
@@ -19,6 +19,7 @@ select
         when account_type in ('checking', 'savings', 'cash') then 'Liquid Cash'
         when account_type in ('otherAsset') then 'Illiquid / Investment'
         when account_type in ('creditCard') then 'Revolving Debt'
+        when account_type in ('lineOfCredit', 'autoLoan') then 'Short-Term Debt'
         when account_type in ('mortgage', 'otherLiability') then 'Long-Term Debt'
     end as liquidity_tier,
 
