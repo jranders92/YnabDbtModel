@@ -7,7 +7,6 @@ select
     category_name,
     category_group_id,
     category_group_name,
-    budgeted_amount,
 
     -- Business Logic / Expense Classification
     case 

@@ -1,6 +1,13 @@
-with monthly_budget as (
-    select * from {{ ref('dim_categories') }}
-),
+with monthly_budget as (    
+    select
+        category_id,
+        budget_month,
+        budgeted_amount
+    from {{ ref('snp_ynab_categories') }}
+    qualify row_number() over (
+        partition by category_id, budget_month
+        order by dbt_valid_from desc
+    ) = 1),
 
 monthly_actuals as (
     select
@@ -12,22 +19,16 @@ monthly_actuals as (
 )
 
 select
-    md5(concat(coalesce(b.category_id, ''), '-', cast(a.budget_month as string))) as budget_variance_pk,
-    a.budget_month,
+    md5(concat(coalesce(b.category_id, ''), '-', cast(b.budget_month as string))) as budget_variance_sk,
+    b.budget_month,
     b.category_id,
     
     -- Measures
     b.budgeted_amount,
     coalesce(a.total_actual_outflow, 0) as actual_spent_amount,
-    b.budgeted_amount - coalesce(a.total_actual_outflow, 0) as variance_amount,
-
-    -- Pacing / Utilization %
-    case 
-        when b.budgeted_amount > 0 
-        then round((coalesce(a.total_actual_outflow, 0) / b.budgeted_amount) * 100, 2)
-        else null 
-    end as budget_utilization_pct
+    b.budgeted_amount - coalesce(a.total_actual_outflow, 0) as variance_amount
 
 from monthly_budget b
 left join monthly_actuals a 
     on b.category_id = a.category_id
+    and b.budget_month = a.budget_month
