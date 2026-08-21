@@ -1,4 +1,3 @@
--- I only need to build this table once
 {{ config(
     materialized='table',
     ) 
