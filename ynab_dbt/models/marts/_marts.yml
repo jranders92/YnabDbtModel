@@ -1,0 +1,11 @@
+models:
+  - name: dim_date
+    columns:
+      - name: date_day
+        tests:
+          - unique
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: "cast('2023-01-01' as date)"
+                max_value: "cast('2030-01-01' as date)"
