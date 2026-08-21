@@ -10,6 +10,56 @@ models:
                 min_value: "cast('2023-01-01' as date)"
                 max_value: "cast('2030-01-01' as date)"
 
+  - name: dim_accounts
+    columns:
+      - name: account_id
+        tests:
+          - unique
+          - not_null
+      - name: account_type
+        tests:
+          - not_null
+      - name: accounting_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Asset', 'Liability', 'Unknown']
+
+  - name: dim_categories
+    columns:
+      - name: category_id
+        tests:
+          - unique
+          - not_null
+      - name: category_group_id
+        tests:
+          - not_null
+
+  - name: fct_transactions
+    columns:
+      - name: transaction_id
+        tests:
+          - unique
+          - not_null
+      - name: transaction_date
+        tests:
+          - not_null
+      - name: account_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_accounts')
+                field: account_id
+      - name: category_id
+        tests:
+          # split transactions in YNAB reference an internal category id not present in dim_categories
+          - relationships:
+              arguments:
+                to: ref('dim_categories')
+                field: category_id
+                where: "category_id != 'cd891398-970b-4ae4-a758-3ba8841a8866'"
+
   - name: fct_monthly_budget_variance
     columns:
       - name: budget_variance_sk
@@ -54,7 +104,3 @@ models:
             combination_of_columns:
               - month_date
               - fred_series_id
-
-
-
-
