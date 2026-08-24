@@ -69,3 +69,14 @@ jobs:
           name: prod-manifest
           path: ./ynab_dbt/target/manifest.json
           retention-days: 7
+
+      - name: Generate dbt docs
+        run: dbt docs generate --target prod
+
+      - name: Deploy docs to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./ynab_dbt/target
+          publish_branch: gh-pages
+
