@@ -59,6 +59,8 @@ models:
         description: >
           Derived classification indicating the liquidity profile of the account.
           Values: Liquid Cash, Illiquid / Investment, Revolving Debt, Short-Term Debt, Long-Term Debt.
+      - name: total_balance
+        description: Current total balance of the account in dollars (cleared + uncleared).
       - name: is_on_budget
         description: Whether the account is tracked on the YNAB budget.
       - name: is_closed
