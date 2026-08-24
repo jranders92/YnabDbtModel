@@ -1,8 +1,7 @@
-with categories as (
+with budget as (
     select * 
-    from {{ref('snp_ynab_categories')}}
-    where dbt_valid_to is null
-    and budget_month = date_trunc('month', current_date)
+    from {{ref('fct_monthly_budget_variance')}}
+    where budget_month = date_trunc('month', current_date)
 ),
 
 category_names as (
@@ -13,14 +12,13 @@ category_names as (
     and category_group_name != 'Credit Card Payments'
 )
 
-Select 
-    c.category_id,
+select 
     cn.category_name,
     cn.category_group_name,
-    c.budget_month,
-    c.budgeted_amount,
-    c.activity_amount,
-    c.balance_amount 
-from categories c
+    b.budget_month,
+    b.budgeted_amount,
+    b.actual_spent_amount,
+    b.variance_amount 
+from budget b
 inner join category_names cn
-on c.category_id = cn.category_id
+on b.category_id = cn.category_id
