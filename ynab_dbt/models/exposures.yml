@@ -1,0 +1,28 @@
+exposures:
+  - name: personal_finance_dashboard
+    label: Personal Finance Dashboard
+    type: dashboard
+    maturity: planned
+    description: >
+      Personal finance dashboard providing a real-time view of monthly budget health,
+      recent spending activity, net worth, and categories at risk of overspending.
+      Intended to be built in a BI tool consuming the reporting layer views.
+    owner:
+      name: Joseph Anderson
+      email: joseph.anderson@mycompany.com
+
+  - name: gas_inflation_analysis
+    label: Gas Inflation Analysis
+    type: analysis
+    maturity: planned
+    description: >
+      Analytical dataset intended for data science use cases such as predicting
+      personal gas spend based on national price trends. Exposes monthly personal
+      gas spending metrics alongside FRED GASREGW national average prices and
+      year-over-year comparisons. Could be used to build a regression model
+      forecasting future personal gas costs based on macroeconomic price signals.
+    owner:
+      name: Joseph Anderson
+      email: joseph.anderson@mycompany.com
+    depends_on:
+      - ref('fct_monthly_gas_inflation')
