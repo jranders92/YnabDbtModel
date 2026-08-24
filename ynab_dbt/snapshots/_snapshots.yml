@@ -1,16 +1,49 @@
 snapshots:
   - name: snp_ynab_categories
+    description: >
+      SCD Type 2 snapshot of YNAB category budget data. Tracks changes to budgeted_amount,
+      activity_amount, and balance_amount over time, capturing one row per change event
+      per category. budget_month is derived from the extraction timestamp and is included
+      as a check column so that month-over-month resets (YNAB zeroes budgets at month rollover)
+      are captured as new snapshot rows. Used by fct_monthly_budget_variance to retrieve
+      the final budgeted state per category per month.
     columns:
       - name: category_id
+        description: >
+          Unique identifier for the YNAB category. Natural key used as the snapshot
+          unique_key — each new change event for a category produces a new row with
+          updated dbt_valid_from / dbt_valid_to timestamps.
         tests:
-        - not_null
+          - not_null
+      - name: budget_month
+        description: >
+          First day of the calendar month derived from date_trunc('month', extracted_at).
+          Included as a check column so that YNAB's monthly budget reset is captured
+          as a new snapshot row rather than treated as a continuation of the prior month.
+      - name: budgeted_amount
+        description: Amount budgeted for this category in the current month, in dollars. Tracked as a check column.
+      - name: activity_amount
+        description: Total spending activity against this category in the current month, in dollars. Tracked as a check column.
+      - name: balance_amount
+        description: Remaining available balance for this category in the current month, in dollars. Tracked as a check column.
+      - name: extracted_at
+        description: Timestamp when the YNAB API payload was extracted and loaded into Snowflake.
       - name: dbt_scd_id
+        description: dbt-generated surrogate key uniquely identifying each snapshot row (change event).
         tests:
-        - unique
-        - not_null
-    
+          - unique
+          - not_null
+      - name: dbt_updated_at
+        description: Timestamp of the most recent extraction that produced or last touched this snapshot row.
+      - name: dbt_valid_from
+        description: Timestamp from which this snapshot row is considered valid. Marks the start of this version of the record.
+      - name: dbt_valid_to
+        description: >
+          Timestamp at which this snapshot row was superseded by a newer version.
+          Null indicates this is the current active record for the category.
+
     # ensures one row per category per budget month per change event (SCD Type 2 grain)
-    tests: 
+    tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
