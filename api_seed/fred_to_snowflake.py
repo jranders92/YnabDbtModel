@@ -19,6 +19,7 @@ SNOWFLAKE_CONFIG = {
     "warehouse": os.environ.get("SNOWFLAKE_WAREHOUSE", "COMPUTE_WH"),
     "database": os.environ.get("SNOWFLAKE_DATABASE", "PERSONAL_FINANCE"),
     "schema": os.environ.get("SNOWFLAKE_SCHEMA", "RAW"),
+    "role": os.environ.get("SNOWFLAKE_ROLE", "fred_ingestion_role"),
 }
 
 FRED_BASE_URL = "https://api.stlouisfed.org/fred"
@@ -66,9 +67,8 @@ def fetch_fred_endpoint(endpoint: str, series_id: str, extra_params: dict = None
 # ==========================================
 def init_snowflake_environment(cursor):
     """Ensure database, schema, and raw target table exist in Snowflake."""
-    cursor.execute(f"CREATE DATABASE IF NOT EXISTS {SNOWFLAKE_CONFIG['database']};")
+    cursor.execute(f"USE ROLE {SNOWFLAKE_CONFIG['role']};")
     cursor.execute(f"USE DATABASE {SNOWFLAKE_CONFIG['database']};")
-    cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {SNOWFLAKE_CONFIG['schema']};")
     cursor.execute(f"USE SCHEMA {SNOWFLAKE_CONFIG['schema']};")
 
     # Raw landing table with VARIANT columns for raw FRED JSON storage
