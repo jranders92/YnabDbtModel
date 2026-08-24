@@ -1,7 +1,11 @@
 models:
   - name: dim_date
+    description: >
+      Date dimension spanning 2023-01-01 to 2030-12-31, generated via dbt_utils.date_spine.
+      Used to support time-based joins and filtering across all fact models.
     columns:
       - name: date_day
+        description: The calendar date. Primary key of this dimension.
         tests:
           - unique
           - not_null
@@ -9,42 +13,114 @@ models:
               arguments:
                 min_value: "cast('2023-01-01' as date)"
                 max_value: "cast('2030-01-01' as date)"
+      - name: year
+        description: Calendar year extracted from date_day.
+      - name: month
+        description: Calendar month number (1-12) extracted from date_day.
+      - name: month_name
+        description: Full month name (e.g. January, February) derived from the month number.
+      - name: day_of_month
+        description: Day of the month (1-31) extracted from date_day.
+      - name: day_of_week
+        description: Day of the week as an integer (0 = Sunday, 6 = Saturday).
+      - name: week_of_year
+        description: ISO week number of the year extracted from date_day.
+      - name: quarter
+        description: Calendar quarter (1-4) extracted from date_day.
+      - name: day_type
+        description: Indicates whether the date falls on a Weekday or Weekend.
 
   - name: dim_accounts
+    description: >
+      Account dimension sourced from YNAB. Contains one row per account with
+      enriched classifications for accounting type (Asset/Liability) and
+      liquidity tier (e.g. Liquid Cash, Revolving Debt, Long-Term Debt).
     columns:
       - name: account_id
+        description: Unique identifier for the account. Primary key.
         tests:
           - unique
           - not_null
+      - name: account_name
+        description: Display name of the account as entered in YNAB.
       - name: account_type
+        description: Raw YNAB account type (e.g. checking, savings, creditCard, mortgage).
         tests:
           - not_null
       - name: accounting_type
+        description: >
+          Derived classification grouping account_type into Asset, Liability, or Unknown.
+          Used for net worth calculations.
         tests:
           - not_null
           - accepted_values:
               values: ['Asset', 'Liability', 'Unknown']
+      - name: liquidity_tier
+        description: >
+          Derived classification indicating the liquidity profile of the account.
+          Values: Liquid Cash, Illiquid / Investment, Revolving Debt, Short-Term Debt, Long-Term Debt.
+      - name: is_on_budget
+        description: Whether the account is tracked on the YNAB budget.
+      - name: is_closed
+        description: Whether the account has been closed in YNAB.
 
   - name: dim_categories
+    description: >
+      Category dimension sourced from YNAB. Contains one row per category with
+      enriched business logic for expense classification (expense_tier),
+      subscription flagging, and a mapping key to FRED CPI series for macro analysis.
     columns:
       - name: category_id
+        description: Unique identifier for the category. Primary key.
         tests:
           - unique
           - not_null
+      - name: category_name
+        description: Display name of the category as entered in YNAB.
       - name: category_group_id
+        description: Foreign key to the parent category group.
         tests:
           - not_null
+      - name: category_group_name
+        description: Display name of the parent category group.
+      - name: expense_tier
+        description: >
+          Derived classification grouping categories into Fixed / Essential,
+          Discretionary, Financial Goals, or Other based on category group name.
+      - name: is_subscription_category
+        description: >
+          Boolean flag indicating whether the category represents a recurring
+          subscription (e.g. Netflix, Spotify).
+      - name: fred_cpi_series_id
+        description: >
+          Maps the category to a FRED CPI series ID for macro inflation comparison.
+          CPIUFDSL = groceries, GASREGW = gas/fuel, CUUR0000SEHA = rent/housing.
+          Null if no mapping applies.
+      - name: goal_type
+        description: Type of savings goal assigned to the category in YNAB (e.g. TB, MF, NEED, DEBT).
+      - name: is_hidden
+        description: Whether the category is hidden in YNAB.
+      - name: is_deleted
+        description: Whether the category has been soft-deleted in YNAB.
 
   - name: fct_transactions
+    description: >
+      Core transaction fact table sourced from YNAB. One row per transaction.
+      Materialized as an incremental table using a merge strategy on transaction_id,
+      refreshing the trailing 30 days on each run. Amounts are split into
+      inflow_amount and outflow_amount for easier aggregation.
     columns:
       - name: transaction_id
+        description: Unique identifier for the transaction. Primary key.
         tests:
           - unique
           - not_null
       - name: transaction_date
+        description: Date the transaction occurred.
         tests:
           - not_null
       - name: account_id
+        description: Foreign key to dim_accounts.
         tests:
           - not_null
           - relationships:
@@ -52,6 +128,10 @@ models:
                 to: ref('dim_accounts')
                 field: account_id
       - name: category_id
+        description: >
+          Foreign key to dim_categories. Null for split transaction parent rows.
+          YNAB split transactions reference an internal category ID not present
+          in the categories payload and are excluded from the relationships test.
         tests:
           # split transactions in YNAB reference an internal category id not present in dim_categories
           - relationships:
@@ -59,20 +139,51 @@ models:
                 to: ref('dim_categories')
                 field: category_id
                 where: "category_id != 'cd891398-970b-4ae4-a758-3ba8841a8866'"
+      - name: payee_name
+        description: Name of the payee as recorded in YNAB.
+      - name: transaction_amount
+        description: Raw transaction amount in dollars. Negative values indicate outflows.
+      - name: inflow_amount
+        description: Positive dollar amount for inflow transactions. Zero for outflows.
+      - name: outflow_amount
+        description: Absolute dollar amount for outflow transactions. Zero for inflows.
+      - name: cleared_status
+        description: Cleared status of the transaction (cleared, uncleared, reconciled).
+      - name: approved_status
+        description: Whether the transaction has been approved in YNAB.
+      - name: is_deleted
+        description: Whether the transaction has been soft-deleted in YNAB.
 
   - name: fct_monthly_budget_variance
+    description: >
+      Monthly budget vs. actual spending fact table at the category-month grain.
+      Budgeted amounts are sourced from snp_ynab_categories (SCD Type 2 snapshot),
+      using the final snapshot state per category per month. Actuals are aggregated
+      from fct_transactions. Used to track spending discipline over time.
     columns:
       - name: budget_variance_sk
+        description: MD5 surrogate key derived from category_id and budget_month. Primary key.
         tests:
           - unique
           - not_null
+      - name: budget_month
+        description: The first day of the calendar month this row represents.
       - name: category_id
+        description: Foreign key to dim_categories.
         tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_categories')
                 field: category_id
+      - name: budgeted_amount
+        description: Amount budgeted for this category in this month, in dollars.
+      - name: actual_spent_amount
+        description: Total outflow spending against this category in this month, in dollars.
+      - name: variance_amount
+        description: >
+          Difference between budgeted and actual spend (budgeted - actual).
+          Positive = under budget. Negative = over budget.
     tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -81,23 +192,57 @@ models:
               - budget_month
 
   - name: fct_monthly_gas_inflation
+    description: >
+      Monthly fact table comparing personal gas spending against the FRED GASREGW
+      national average retail gas price. Includes an implied personal price per gallon
+      based on Toyota Corolla fill-up behavior (~10 gallons per fill-up at quarter tank),
+      and year-over-year percentage change metrics for both personal spend and national prices.
     columns:
       - name: gas_inflation_sk
+        description: MD5 surrogate key derived from month_date and fred_series_id. Primary key.
         tests:
           - unique
           - not_null
       - name: month_date
+        description: The first day of the calendar month this row represents.
         tests:
           - not_null
       - name: fred_series_id
+        description: FRED series ID for the gas price benchmark. Always GASREGW in this model.
         tests:
           - not_null
+      - name: fred_series_name
+        description: Human-readable name of the FRED series (e.g. US Regular Gasoline Retail Prices).
+      - name: price_units
+        description: Units of the FRED price observation (e.g. Dollars per Gallon).
       - name: total_gas_spent
+        description: Total dollars spent on gas transactions in this month.
         tests:
           - not_null
       - name: transaction_count
+        description: Number of gas fill-up transactions in this month.
         tests:
           - not_null
+      - name: avg_transaction_size
+        description: Average dollar amount per gas transaction in this month.
+      - name: avg_gas_price_per_gallon
+        description: National average retail gas price per gallon for this month, averaged from weekly GASREGW observations.
+      - name: my_implied_price_per_gallon
+        description: >
+          Personal implied price per gallon, calculated as total_gas_spent / (transaction_count * 10).
+          Assumes ~10 gallons per fill-up based on Toyota Corolla filled at quarter tank.
+      - name: price_vs_national_avg
+        description: >
+          Difference between my_implied_price_per_gallon and avg_gas_price_per_gallon.
+          Positive = paying more than national average. Negative = paying less.
+      - name: total_gas_spent_prior_year
+        description: total_gas_spent from the same month one year prior. Used for YoY comparison.
+      - name: avg_gas_price_prior_year
+        description: avg_gas_price_per_gallon from the same month one year prior. Used for YoY comparison.
+      - name: personal_gas_spend_yoy_pct
+        description: Year-over-year percentage change in personal gas spending.
+      - name: national_gas_price_yoy_pct
+        description: Year-over-year percentage change in the national average gas price per gallon.
     tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
