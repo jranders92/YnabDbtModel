@@ -83,4 +83,5 @@ jobs:
           github_token: ${{ github.token }}
           publish_dir: ./ynab_dbt/target
           publish_branch: gh-pages
+          force_orphan: true
 
