@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 env:
   DBT_SNOWFLAKE_ACCOUNT: ${{ secrets.DBT_SNOWFLAKE_ACCOUNT }}
   DBT_SNOWFLAKE_USER: ${{ secrets.DBT_SNOWFLAKE_USER }}
@@ -74,9 +77,9 @@ jobs:
         run: dbt docs generate --target prod
 
       - name: Deploy docs to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ github.token }}
           publish_dir: ./ynab_dbt/target
           publish_branch: gh-pages
 
