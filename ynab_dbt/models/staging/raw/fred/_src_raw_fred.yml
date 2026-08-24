@@ -13,6 +13,7 @@ sources:
             error_after: 
               count: 48
               period: hour
+          loaded_at_field: extracted_at
         columns:
           - name: series_id
             description: Fred Series ID
