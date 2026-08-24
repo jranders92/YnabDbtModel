@@ -54,7 +54,7 @@ jobs:
                 account: "${DBT_SNOWFLAKE_ACCOUNT}"
                 user: "${DBT_SNOWFLAKE_USER}"
                 password: "${DBT_SNOWFLAKE_PASSWORD}"
-                role: ACCOUNTADMIN
+                role: ynab_dbt_role
                 database: PERSONAL_FINANCE
                 warehouse: COMPUTE_WH
                 schema: "${DBT_CI_SCHEMA}"
