@@ -35,6 +35,8 @@ models:
       +materialized: "{{ 'view' if target.name=='dev' else 'ephemeral' }}" # I don't want staging views in prod
     marts:
       +materialized: table
+    reporting:
+      +materialized: view
 
 snapshots:
   ynab_dbt:
