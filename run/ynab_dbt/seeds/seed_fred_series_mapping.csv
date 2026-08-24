@@ -1,0 +1,12 @@
+
+    
+    
+    ;
+    -- dbt seed --
+    
+            insert overwrite into PERSONAL_FINANCE.analytics_prod.seed_fred_series_mapping (series_id, series_name, macro_category, frequency, units, matching_ynab_category_group) values
+            (%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s)
+        
+
+;
+  
