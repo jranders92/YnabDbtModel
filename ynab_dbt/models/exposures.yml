@@ -2,7 +2,7 @@ exposures:
   - name: personal_finance_dashboard
     label: Personal Finance Dashboard
     type: dashboard
-    maturity: planned
+    maturity: medium
     description: >
       Personal finance dashboard providing a real-time view of monthly budget health,
       recent spending activity, net worth, and categories at risk of overspending.
@@ -10,11 +10,16 @@ exposures:
     owner:
       name: Joseph Anderson
       email: joseph.anderson@mycompany.com
+    depends_on:
+      - ref('rpt_categories_approaching_overspend')
+      - ref('rpt_current_month_budget')
+      - ref('rpt_net_worth_snapshot')
+      - ref('rpt_recent_transactions')
 
   - name: gas_inflation_analysis
     label: Gas Inflation Analysis
     type: analysis
-    maturity: planned
+    maturity: low
     description: >
       Analytical dataset intended for data science use cases such as predicting
       personal gas spend based on national price trends. Exposes monthly personal
