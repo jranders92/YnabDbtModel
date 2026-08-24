@@ -1,0 +1,60 @@
+models:
+  - name: rpt_current_month_budget
+    description: >
+      Analyst-ready view of the current month's budget vs. actual spending by category.
+      Sourced from fct_monthly_budget_variance filtered to the current calendar month.
+      Excludes hidden, deleted, and non-budgeting categories such as credit card payment
+      categories, uncategorized transactions, and reimbursements. Intended for direct
+      BI consumption as a live budget dashboard.
+    columns:
+      - name: category_name
+        description: Display name of the budget category.
+      - name: category_group_name
+        description: Display name of the parent category group (e.g. Fixed Expenses, Groceries).
+      - name: budget_month
+        description: First day of the current calendar month.
+      - name: budgeted_amount
+        description: Amount budgeted for this category in the current month, in dollars.
+      - name: actual_spent_amount
+        description: Total amount spent against this category in the current month, in dollars.
+      - name: variance_amount
+        description: >
+          Difference between budgeted and actual spend (budgeted - actual).
+          Positive = under budget. Negative = over budget.
+
+  - name: rpt_net_worth_snapshot
+    description: >
+      Analyst-ready view of current account balances grouped by accounting type and
+      liquidity tier. Excludes closed accounts. Provides a high-level net worth summary
+      showing total assets, liabilities, and liquidity breakdown for dashboard use.
+    columns:
+      - name: accounting_type
+        description: Asset or Liability classification derived from account type.
+      - name: liquidity_tier
+        description: Liquidity classification (e.g. Liquid Cash, Revolving Debt, Long-Term Debt).
+      - name: account_count
+        description: Number of open accounts in this accounting type and liquidity tier grouping.
+      - name: total_balance
+        description: Sum of current balances across all accounts in this grouping, in dollars.
+
+  - name: rpt_categories_approaching_overspend
+    description: >
+      Analyst-ready view of budget categories in the current month where actual spending
+      has reached 80% or more of the budgeted amount. Sourced from rpt_current_month_budget.
+      Excludes categories with no budget set. Intended as an actionable alert view for
+      identifying categories at risk of going over budget before month end.
+    columns:
+      - name: category_name
+        description: Display name of the budget category.
+      - name: category_group_name
+        description: Display name of the parent category group.
+      - name: budget_month
+        description: First day of the current calendar month.
+      - name: budgeted_amount
+        description: Amount budgeted for this category in the current month, in dollars.
+      - name: actual_spent_amount
+        description: Total amount spent against this category in the current month, in dollars.
+      - name: variance_amount
+        description: >
+          Difference between budgeted and actual spend (budgeted - actual).
+          Positive = under budget. Negative = over budget.
