@@ -56,11 +56,11 @@ jobs:
       - name: Install dbt packages
         run: dbt deps
 
+      - name: Run dbt snapshot
+        run: dbt snapshot --target prod      
+      
       - name: Run dbt build
         run: dbt build --target prod
-
-      - name: Run dbt snapshot
-        run: dbt snapshot --target prod
 
       - name: Upload manifest for Slim CI
         if: success()
