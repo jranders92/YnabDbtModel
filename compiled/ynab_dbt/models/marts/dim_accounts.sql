@@ -58,6 +58,7 @@ select
         when account_type in ('mortgage', 'otherLiability') then 'Long-Term Debt'
     end as liquidity_tier,
 
+    total_balance,
     is_on_budget,
     is_closed
 
