@@ -20,7 +20,7 @@ FRED API ───────────────────────�
                                                                             │
                                                                             ▼
                                                               dbt Marts Layer
-                                                              (dim_*, fct_*)
+                                                              (dim_*, fct_*, snp_*)
 ```
 
 ---
@@ -84,12 +84,18 @@ Materialized as `table` in both dev and prod.
 
 | Model | Description |
 |-------|-------------|
+| `dim_date` | Date dimension from 2023–2030 with calendar attributes |
 | `dim_accounts` | Account dimension with asset/liability and liquidity classifications |
 | `dim_categories` | Category dimension with expense tier and FRED CPI series mapping |
-| `fct_transactions` | Core transaction fact table with inflow/outflow split |
-| `fct_monthly_budget_variance` | Monthly budgeted vs. actual spending with utilization % by category |
-| `fct_monthly_grocery_inflation` | Personal grocery spend vs. national CPI with YoY % comparisons |
-| `fct_top_15_transactions` | Top 15 transactions by amount |
+| `fct_transactions` | Core transaction fact table with inflow/outflow split. Incremental merge on trailing 30 days |
+| `fct_monthly_budget_variance` | Monthly budgeted vs. actual spending by category |
+| `fct_monthly_gas_inflation` | Personal gas spend vs. FRED national average with YoY comparisons |
+
+### Snapshots
+
+| Model | Description |
+|-------|-------------|
+| `snp_ynab_categories` | SCD Type 2 snapshot tracking monthly budget, activity, and balance changes per category |
 
 ---
 
@@ -106,7 +112,7 @@ Two GitHub Actions workflows manage the deployment lifecycle:
 
 ### `dbt_prod.yml` — Production Deployment
 - Triggers on merge to `main`
-- Runs a full `dbt build` against the `analytics_prod` schema
+- Runs `dbt snapshot` then a full `dbt build` against the `analytics_prod` schema
 - Uploads `manifest.json` as a GitHub artifact for Slim CI diffing on subsequent PRs
 
 ---
@@ -118,15 +124,60 @@ Two GitHub Actions workflows manage the deployment lifecycle:
 - Python 3.11+
 - Snowflake account
 - YNAB API key ([generate here](https://app.ynab.com/settings/developer))
-- FRED API key ([generate here](https://fred.stlouisfed.org/docs/api/api_key.html))
+- FRED API key ([generate here, need to create a free account](https://fred.stlouisfed.org/docs/api/api_key.html))
 
-### 1. Install dependencies
+### 1. Snowflake Infrastructure Setup
+
+Run the following once in Snowflake as `ACCOUNTADMIN` to create the required warehouse, database, schemas, and roles.
+
+```sql
+-- Warehouse and database
+CREATE WAREHOUSE IF NOT EXISTS COMPUTE_WH
+    WAREHOUSE_SIZE = 'X-SMALL'
+    AUTO_SUSPEND = 60
+    AUTO_RESUME = TRUE;
+
+CREATE DATABASE IF NOT EXISTS PERSONAL_FINANCE;
+CREATE SCHEMA IF NOT EXISTS PERSONAL_FINANCE.RAW;
+CREATE SCHEMA IF NOT EXISTS PERSONAL_FINANCE.ANALYTICS_PROD;
+CREATE SCHEMA IF NOT EXISTS PERSONAL_FINANCE.SNAPSHOTS;
+
+-- Ingestion role (used by Python scripts to write raw data)
+CREATE ROLE IF NOT EXISTS raw_ingestion_role;
+GRANT USAGE ON WAREHOUSE COMPUTE_WH TO ROLE raw_ingestion_role;
+GRANT USAGE ON DATABASE PERSONAL_FINANCE TO ROLE raw_ingestion_role;
+GRANT USAGE ON SCHEMA PERSONAL_FINANCE.RAW TO ROLE raw_ingestion_role;
+GRANT CREATE TABLE ON SCHEMA PERSONAL_FINANCE.RAW TO ROLE raw_ingestion_role;
+GRANT INSERT, SELECT ON ALL TABLES IN SCHEMA PERSONAL_FINANCE.RAW TO ROLE raw_ingestion_role;
+GRANT INSERT, SELECT ON FUTURE TABLES IN SCHEMA PERSONAL_FINANCE.RAW TO ROLE raw_ingestion_role;
+
+-- dbt role (used by dbt for transformations and CI/CD)
+CREATE ROLE IF NOT EXISTS ynab_dbt_role;
+GRANT USAGE ON WAREHOUSE COMPUTE_WH TO ROLE ynab_dbt_role;
+GRANT USAGE ON DATABASE PERSONAL_FINANCE TO ROLE ynab_dbt_role;
+GRANT CREATE SCHEMA ON DATABASE PERSONAL_FINANCE TO ROLE ynab_dbt_role;
+GRANT USAGE ON SCHEMA PERSONAL_FINANCE.RAW TO ROLE ynab_dbt_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA PERSONAL_FINANCE.RAW TO ROLE ynab_dbt_role;
+GRANT SELECT ON FUTURE TABLES IN SCHEMA PERSONAL_FINANCE.RAW TO ROLE ynab_dbt_role;
+GRANT ALL ON SCHEMA PERSONAL_FINANCE.ANALYTICS_PROD TO ROLE ynab_dbt_role;
+GRANT ALL ON ALL TABLES IN SCHEMA PERSONAL_FINANCE.ANALYTICS_PROD TO ROLE ynab_dbt_role;
+GRANT ALL ON FUTURE TABLES IN SCHEMA PERSONAL_FINANCE.ANALYTICS_PROD TO ROLE ynab_dbt_role;
+GRANT ALL ON SCHEMA PERSONAL_FINANCE.SNAPSHOTS TO ROLE ynab_dbt_role;
+GRANT ALL ON ALL TABLES IN SCHEMA PERSONAL_FINANCE.SNAPSHOTS TO ROLE ynab_dbt_role;
+GRANT ALL ON FUTURE TABLES IN SCHEMA PERSONAL_FINANCE.SNAPSHOTS TO ROLE ynab_dbt_role;
+
+-- Assign roles to your user
+GRANT ROLE raw_ingestion_role TO USER <your_snowflake_user>;
+GRANT ROLE ynab_dbt_role TO USER <your_snowflake_user>;
+```
+
+### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure environment variables
+### 3. Configure environment variables
 
 Create a `.env` file in the project root:
 
@@ -139,19 +190,20 @@ FRED_API_KEY=<your_fred_api_key>
 SNOWFLAKE_USER=<your_snowflake_user>
 SNOWFLAKE_PASSWORD=<your_snowflake_password>
 SNOWFLAKE_ACCOUNT=<your_snowflake_account>
+SNOWFLAKE_ROLE=raw_ingestion_role
 SNOWFLAKE_WAREHOUSE=COMPUTE_WH
 SNOWFLAKE_DATABASE=PERSONAL_FINANCE
 SNOWFLAKE_SCHEMA=RAW
 ```
 
-### 3. Ingest raw data
+### 4. Ingest raw data
 
 ```bash
 python api_seed/ynab_to_snowflake.py
 python api_seed/fred_to_snowflake.py
 ```
 
-### 4. Configure dbt profile
+### 5. Configure dbt profile
 
 Add the following to `~/.dbt/profiles.yml`:
 
@@ -164,19 +216,20 @@ ynab_dbt:
       account: <your_snowflake_account>
       user: <your_snowflake_user>
       password: <your_snowflake_password>
-      role: ACCOUNTADMIN
+      role: ynab_dbt_role
       database: PERSONAL_FINANCE
       warehouse: COMPUTE_WH
       schema: dbt_<your_name>
       threads: 4
 ```
 
-### 5. Run dbt
+### 6. Run dbt
 
 ```bash
 cd ynab_dbt
 dbt deps        # Install dbt packages
 dbt seed        # Load FRED series mapping CSV
+dbt snapshot    # Run SCD Type 2 snapshots
 dbt build       # Run models + tests
 dbt docs generate && dbt docs serve   # View documentation
 ```
