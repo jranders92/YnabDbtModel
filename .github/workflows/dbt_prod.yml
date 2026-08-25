@@ -57,10 +57,7 @@ jobs:
           EOF
 
       - name: Install dbt packages
-        run: dbt deps
-
-      - name: Run dbt snapshot
-        run: dbt snapshot --target prod      
+        run: dbt deps  
       
       - name: Run dbt build
         run: dbt build --target prod
