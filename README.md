@@ -141,7 +141,7 @@ Two GitHub Actions workflows manage the deployment lifecycle:
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.11 (the required version is recorded in `.python-version`)
 - Snowflake account (can create free 30 day trial)
 - YNAB API key ([generate here](https://app.ynab.com/settings/developer))
 - FRED API key ([generate here, need to create a free account](https://fred.stlouisfed.org/docs/api/api_key.html))
@@ -208,11 +208,41 @@ GRANT ROLE analyst_role TO USER analyst_user;
 ALTER USER analyst_user SET PASSWORD = '<create_password>';
 ```
 
-### 2. Install dependencies
+### 2. Create a virtual environment and install dependencies
+
+From the project root, create and activate a virtual environment with Python 3.11. On Windows PowerShell:
+
+```powershell
+py -3.11 -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+On macOS or Linux:
 
 ```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+```
+
+Verify the active interpreter before installing dependencies:
+
+```bash
+python --version
+```
+
+It should report Python 3.11.x. If an existing `.venv` reports Python 3.9 or
+another version, delete `.venv` and recreate it with the commands above.
+
+Then install the pinned project dependencies:
+
+```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+The repository pins dbt Core, the Snowflake adapter, the Snowflake connector, and
+`python-dotenv`. The CI and production workflows install this same file so local
+and GitHub Actions environments use the same toolchain.
 
 ### 3. Configure environment variables
 

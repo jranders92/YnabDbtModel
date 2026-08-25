@@ -33,14 +33,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version-file: '.python-version'
           cache: 'pip'
 
       # Step 3: Install dbt and Snowflake adapter
       - name: Install dbt Dependencies
         run: |
           pip install --upgrade pip
-          pip install dbt-snowflake
+          pip install -r ../requirements.txt
 
       - name: Create default profiles.yml on GitHub Runner
         run: |
