@@ -12,7 +12,7 @@ gas_transactions as (
     from {{ ref('fct_transactions') }} t
     inner join {{ ref('dim_categories') }} c
         on t.category_id = c.category_id
-    where c.category_name in (select matching_ynab_category_group from fred_seed)
+    where c.category_name in (select matching_ynab_category_name from fred_seed)
     group by 1
 ),
 

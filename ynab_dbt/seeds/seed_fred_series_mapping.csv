@@ -1,4 +1,4 @@
-﻿series_id,series_name,macro_category,frequency,units,matching_ynab_category_group
+﻿series_id,series_name,macro_category,frequency,units,matching_ynab_category_name
 CPIUFDSL,Consumer Price Index - Food at Home,Groceries,Monthly,Index 1982-1984=100,Groceries
 GASREGW,US Regular Gasoline Prices,Transportation,Weekly,Dollars per Gallon,Gasoline
 CUUR0000SEHA,Consumer Price Index - Primary Rent,Housing,Monthly,Index 1982-1984=100,Mortgage
