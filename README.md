@@ -122,7 +122,7 @@ Two GitHub Actions workflows manage the deployment lifecycle:
 ### Prerequisites
 
 - Python 3.11+
-- Snowflake account
+- Snowflake account (can create free 30 day trial)
 - YNAB API key ([generate here](https://app.ynab.com/settings/developer))
 - FRED API key ([generate here, need to create a free account](https://fred.stlouisfed.org/docs/api/api_key.html))
 
@@ -183,7 +183,7 @@ Create a `.env` file in the project root:
 
 ```env
 YNAB_API_KEY=<your_ynab_api_key>
-YNAB_BUDGET_ID=<your_ynab_budget_id>
+YNAB_BUDGET_ID=<your_ynab_budget_id> (Found in URL)
 
 FRED_API_KEY=<your_fred_api_key>
 
