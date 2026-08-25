@@ -60,7 +60,8 @@ jobs:
         run: dbt deps  
       
       - name: Run dbt build
-        run: dbt build --target prod
+        run: dbt seed --target prod --full-refresh
+        run: dbt build --target prod --exclude resource_type:seed
 
       - name: Upload manifest for Slim CI
         if: success()
