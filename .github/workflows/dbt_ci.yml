@@ -80,11 +80,9 @@ jobs:
         run: |
           if [ -f "./state/manifest.json" ]; then
             echo "Production manifest found. Running Slim CI on state:modified+..."
-            dbt snapshot --target ci
             dbt build --target ci --select state:modified+ --state ./state
           else
             echo "No production manifest found. Running full project build..."
-            dbt snapshot --target ci
             dbt build --target ci
           fi
 
@@ -94,5 +92,6 @@ jobs:
         run: |
           echo "Cleaning up temporary schema: $DBT_CI_SCHEMA"
           dbt run-operation drop_schema_if_exists --args "{schema_name: $DBT_CI_SCHEMA}" --target ci
+          dbt run-operation drop_schema_if_exists --args "{schema_name: ${DBT_CI_SCHEMA}_staging}" --target ci
           dbt run-operation drop_schema_if_exists --args "{schema_name: ${DBT_CI_SCHEMA}_snapshots}" --target ci
           
