@@ -54,7 +54,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['Asset', 'Liability', 'Unknown']
+              arguments:
+                values: ['Asset', 'Liability', 'Unknown']
       - name: liquidity_tier
         description: >
           Derived classification indicating the liquidity profile of the account.
