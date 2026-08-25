@@ -1,6 +1,6 @@
 # YNAB Personal Finance dbt Project
 
-A personal finance analytics pipeline that ingests data from the [YNAB API](https://api.youneedabudget.com/) and [FRED (Federal Reserve Economic Data)](https://fred.stlouisfed.org/docs/api/fred/) into Snowflake, then transforms it using dbt into analytical models for budgeting, spending, and macroeconomic comparison.
+A personal finance analytics pipeline that ingests data from the [YNAB API](https://api.youneedabudget.com/) and [FRED (Federal Reserve Economic Data)](https://fred.stlouisfed.org/docs/api/fred/) into Snowflake, then transforms it using dbt into analytical models for budgeting, spending, and macroeconomic comparison for gas spending. Roles are created for ingestion, dbt usage, and for analysts.
 
 ---
 
@@ -20,7 +20,15 @@ FRED API ───────────────────────�
                                                                             │
                                                                             ▼
                                                               dbt Marts Layer
-                                                              (dim_*, fct_*, snp_*)
+                                                              (dim_*, fct_*)
+                                                                            │
+                                                                            ▼
+                                                           dbt Reporting Layer
+                                                           (rpt_* analyst views)
+                                                                            │
+                                                                            ▼
+                                                            dbt Snapshot Layer
+                                                            (snp_* SCD Type 2)
 ```
 
 ---
@@ -30,7 +38,7 @@ FRED API ───────────────────────�
 | Source | Description | Ingestion Script |
 |--------|-------------|-----------------|
 | YNAB API | Personal budget data — accounts, categories, transactions | `api_seed/ynab_to_snowflake.py` |
-| FRED API | Macroeconomic CPI series — groceries, rent, gas, S&P 500 | `api_seed/fred_to_snowflake.py` |
+| FRED API | Macroeconomic series — groceries, rent, gas, and the S&P 500 | `api_seed/fred_to_snowflake.py` |
 
 ### FRED Series Tracked
 
@@ -55,7 +63,8 @@ YnabDbtModel/
 │   │   ├── staging/raw/
 │   │   │   ├── ynab/                # Staging models for YNAB source data
 │   │   │   └── fred/                # Staging models for FRED source data
-│   │   └── marts/                   # Dimensional and fact models
+│   │   ├── marts/                   # Dimensional and fact models
+│   │   └── reporting/               # Analyst-ready reporting views
 │   ├── macros/                      # Custom dbt macros
 │   ├── seeds/                       # Static reference data (FRED series mapping)
 │   └── snapshots/                   # dbt snapshots (SCD Type 2)
@@ -80,7 +89,7 @@ Staging models parse raw JSON `VARIANT` payloads from Snowflake using `LATERAL F
 
 ### Marts Layer
 
-Materialized as `table` in both dev and prod.
+Materialized as tables in both dev and prod; `fct_transactions` uses an incremental merge strategy.
 
 | Model | Description |
 |-------|-------------|
@@ -90,6 +99,17 @@ Materialized as `table` in both dev and prod.
 | `fct_transactions` | Core transaction fact table with inflow/outflow split. Incremental merge on trailing 30 days |
 | `fct_monthly_budget_variance` | Monthly budgeted vs. actual spending by category |
 | `fct_monthly_gas_inflation` | Personal gas spend vs. FRED national average with YoY comparisons |
+
+### Reporting Layer
+
+Analyst-ready views for dashboards and recurring analysis.
+
+| Model | Description |
+|-------|-------------|
+| `rpt_current_month_budget` | Current-month budgeted vs. actual spending by category |
+| `rpt_categories_approaching_overspend` | Categories at 80% or more of their monthly budget |
+| `rpt_net_worth_snapshot` | Current balances grouped by accounting type and liquidity tier |
+| `rpt_recent_transactions` | Recent transaction activity for analysis |
 
 ### Snapshots
 
@@ -122,7 +142,7 @@ Two GitHub Actions workflows manage the deployment lifecycle:
 ### Prerequisites
 
 - Python 3.11+
-- Snowflake account
+- Snowflake account (can create free 30 day trial)
 - YNAB API key ([generate here](https://app.ynab.com/settings/developer))
 - FRED API key ([generate here, need to create a free account](https://fred.stlouisfed.org/docs/api/api_key.html))
 
@@ -166,9 +186,26 @@ GRANT ALL ON SCHEMA PERSONAL_FINANCE.SNAPSHOTS TO ROLE ynab_dbt_role;
 GRANT ALL ON ALL TABLES IN SCHEMA PERSONAL_FINANCE.SNAPSHOTS TO ROLE ynab_dbt_role;
 GRANT ALL ON FUTURE TABLES IN SCHEMA PERSONAL_FINANCE.SNAPSHOTS TO ROLE ynab_dbt_role;
 
+-- Analyst role (read-only access to analytics and snapshots)
+CREATE ROLE analyst_role;
+GRANT USAGE ON WAREHOUSE COMPUTE_WH TO ROLE analyst_role;
+GRANT USAGE ON DATABASE PERSONAL_FINANCE TO ROLE analyst_role;
+GRANT USAGE ON SCHEMA PERSONAL_FINANCE.ANALYTICS_PROD TO ROLE analyst_role;
+GRANT USAGE ON SCHEMA PERSONAL_FINANCE.SNAPSHOTS TO ROLE analyst_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA PERSONAL_FINANCE.ANALYTICS_PROD TO ROLE analyst_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA PERSONAL_FINANCE.SNAPSHOTS TO ROLE analyst_role;
+GRANT SELECT ON ALL VIEWS IN SCHEMA PERSONAL_FINANCE.ANALYTICS_PROD TO ROLE analyst_role;
+GRANT SELECT ON FUTURE TABLES IN SCHEMA PERSONAL_FINANCE.ANALYTICS_PROD TO ROLE analyst_role;
+
 -- Assign roles to your user
 GRANT ROLE raw_ingestion_role TO USER <your_snowflake_user>;
 GRANT ROLE ynab_dbt_role TO USER <your_snowflake_user>;
+
+-- Optional test user
+GRANT ROLE analyst_role TO USER <your_snowflake_user>;
+CREATE USER analyst_user;
+GRANT ROLE analyst_role TO USER analyst_user;
+ALTER USER analyst_user SET PASSWORD = '<create_password>';
 ```
 
 ### 2. Install dependencies
@@ -183,7 +220,7 @@ Create a `.env` file in the project root:
 
 ```env
 YNAB_API_KEY=<your_ynab_api_key>
-YNAB_BUDGET_ID=<your_ynab_budget_id>
+YNAB_BUDGET_ID=<your_ynab_budget_id> (Found in URL)
 
 FRED_API_KEY=<your_fred_api_key>
 
