@@ -23,7 +23,7 @@ gas_transactions as (
     from PERSONAL_FINANCE.analytics_prod.fct_transactions t
     inner join PERSONAL_FINANCE.analytics_prod.dim_categories c
         on t.category_id = c.category_id
-    where c.category_name in (select matching_ynab_category_group from fred_seed)
+    where c.category_name in (select matching_ynab_category_name from fred_seed)
     group by 1
 ),
 

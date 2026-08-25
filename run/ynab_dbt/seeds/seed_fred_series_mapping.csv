@@ -1,10 +1,12 @@
 
     
     
-    ;
+    
+    create table PERSONAL_FINANCE.analytics_prod.seed_fred_series_mapping (series_id text,series_name text,macro_category text,frequency text,units text,matching_ynab_category_name text)
+  ;
     -- dbt seed --
     
-            insert overwrite into PERSONAL_FINANCE.analytics_prod.seed_fred_series_mapping (series_id, series_name, macro_category, frequency, units, matching_ynab_category_group) values
+            insert overwrite into PERSONAL_FINANCE.analytics_prod.seed_fred_series_mapping (series_id, series_name, macro_category, frequency, units, matching_ynab_category_name) values
             (%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s),(%s,%s,%s,%s,%s,%s)
         
 
